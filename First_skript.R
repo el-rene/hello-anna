@@ -4,7 +4,6 @@ a = 5
 b = 8
 c = a - b 
 
-# Co#cccccccc
 
 # Commit Numero Uno
 #dddd
@@ -31,9 +30,7 @@ c = a - b
 ### Branch zum Dritten
 
 5
-44444
-3333
-55
+
 
 #### Neuer Stand
 
