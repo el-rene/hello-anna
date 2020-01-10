@@ -29,6 +29,8 @@ anzahl_kunden=3921
 
 # Wie viele Bestellungen wurden in dem Zeitraum ausgelöst?
 
+sum(customer_summary$orders)
+gesamtbestellungen_kunden=349227
 
 summarise(bereinigte_daten$InvoiceNo)
 # Wie viele Bestellungen pro Kunde?
@@ -42,9 +44,26 @@ bestellungen_pro_kunde_median=median(customer_summary$orders)
 umsatz_pro_kunde_mean=mean(customer_summary$revenue)
 umsatz_pro_kunde_medaian=median(customer_summary$revenue)
 
-# Verteilung Umsatz und Bestellungen (Pareto Prinzip)?
+# Gesamter Umsatz über alle Kunden?
 
-ggplot(data = customer_summary,
+sum(customer_summary$revenue)
+gesamtumsatz_kunden=7285025
+
+# Verteilung Bestellungen und Umsatz (Pareto Prinzip)?
+
+#Daten vorbereiten
+customer_revenue <- 
+  customer_summary %>% 
+  group_by(CustomerID) %>% 
+  summarise(orders = n(), # Anzahl an Orders n()
+            quantity = sum(quantity),
+            revenue = sum(quantity * UnitPrice),
+            prozent_rev = sum(revenue/gesamtumsatz_kunden*100))
+
+ggplot(data = customer_summary) +
+  geom_smooth(mapping = aes(x=avg_order_val, y=revenue), color="blue")
+
+
       
 ## Produkte
 
