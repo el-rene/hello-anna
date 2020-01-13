@@ -4,27 +4,97 @@ author: "Anna"
 date: "1/8/2020"
 output: html_document
 ---
+# Daten Upload und Bereinigung (RL)
+```{r liabraries laden, include=TRUE}
+# benötigte Libraries laden
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(tidyverse)
+library(lubridate) 
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r import der Daten, include=TRUE}
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+# Import der Daten
 
-```{r cars}
-summary(cars)
+raw_data <- read_excel("Online_Retail_Data.xlsx")
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+```{r Manipulation der Rohdaten, include=TRUE}
+# Manipulation der Daten
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+weekend <- c("Sa", "So") # Sa. und So. als Value, um Weekend-Spalte im nächsten Schritt zu erzeugen
+
+bereinigte_daten <- raw_data %>% # Verwende die hochgeladenen Rohdaten und dann...
+  distinct(InvoiceNo, StockCode, Description, Quantity, InvoiceDate, UnitPrice, CustomerID, Country) %>% # lösche doppelte Werte 
+  filter(Country == "United Kingdom", # filtere diese auf UK, 
+         CustomerID != is.na(CustomerID), # schließe Customer ohne ID aus und
+         Quantity > 0, # berücksichtige nur Artikel mit einer Quantity größer Null (nochmal überdenken, aber für den Moment zum arbeiten okay)
+         UnitPrice > 0) %>% # und filtere negative Preise raus. 
+  mutate(InvoiceNo = factor(InvoiceNo), # Ändere InvoiceNo, StockCode, CustomerID und Country in Faktoren
+         StockCode = factor(StockCode),
+         CustomerID = factor(CustomerID),
+         Country = factor(Country),
+         date = floor_date(InvoiceDate, "day"), # erzeuge eine Date Spalte aus dem InvoiceDate
+         hour = hour(InvoiceDate), # erzeuge eine zusätzliche hour Spalte,
+         weekday = wday(InvoiceDate, label = TRUE), # eine weekdaySpalte
+         is_weekend = weekday %in% weekend) # sowie eine Spalte ob eine Order am Wochenende erfolgte. 
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+# Beschreibung der Daten (AH)
+
+```{r Datentransformation, include=TRUE}
+# Kunden
+# Tabelle nach Kunden sortiert
+
+customer_summary <- 
+  bereinigte_daten %>% 
+  group_by(CustomerID) %>% 
+  summarise(orders = n(), # Anzahl an Orders n()
+            quantity = sum(Quantity),
+            revenue = sum(Quantity * UnitPrice),
+            UnitPrice = sum(UnitPrice),
+            first_order = min(date),
+            last_order = max(date)) %>% 
+  mutate(avg_order_val = revenue / orders,
+         avg_item_val = revenue / quantity)
+
+#Wie viele Kunden haben wir?
+dim(customer_summary) # 3921 Kunden
+anzahl_kunden=3921
+
+# Wie viele Bestellungen wurden in dem Zeitraum ausgelöst?
+
+sum(customer_summary$orders)
+gesamtbestellungen_kunden=349227
+
+# Wie viele Bestellungen pro Kunde?
+
+bestellungen_pro_kunde=mean(customer_summary$orders)
+durchschnittliche_bestellungen=gesamtbestellungen_kunden/anzahl_kunden #das gleiche wie drüber
+
+summary(customer_summary$orders)
+
+bestellungen_pro_kunde_median=median(customer_summary$orders)
+
+# Wir sehen das mindestens ein Kunde 7676 Bestellungen getätigt hat, deshalb Durschnittswert erhöht
+# Betrachtet man stattdessen den Median, liegt der Durchschnitt bei 40, kommmt der Realität näher, da der Ausreißer nicht so stark ins Gewicht fällt.
+bestellungen_pro_kunde_median=median(customer_summary$orders)
+
+# Wie viel Umsatz pro Kunde?
+
+umsatz_pro_kunde_mean=mean(customer_summary$revenue)
+umsatz_pro_kunde_median=median(customer_summary$revenue)
+
+# Gesamter Umsatz über alle Kunden?
+
+sum(customer_summary$revenue)
+gesamtumsatz_kunden=7285025
+
+```
+
+Im Datensatz sind **`r anzahl_kunden` Kunden** enhalten, die gesamt **`r gesamtbestellungen_kunden` Bestellungen** getätigt haben und dabei einen **Gesamtumsatz von `r gesamtumsatz_kunden`** erzeugt haben. Dabei wurden **durchschnittlich pro Kunde `r bestellungen_pro_kunde` Bestellungen** getätigt, allerdings zeigen die Daten, dass unter den Kunden mindestens einer ist, der 7676 Bestellungen getätigt hat. Damit dieser Ausreißer nicht so stark ins Gewicht fällt, betrachten wir zustäzlich den Median, dieser liegt bei `r bestellungen_pro_kunde_median`. Ausgelöst wurde dabei ein **durchschnittlicher Kundenumsatz von `r umsatz_pro_kunde_mean`**, der Median liegt hier bei `r umsatz_pro_kunde_median`.
+
