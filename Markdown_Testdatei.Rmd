@@ -46,6 +46,7 @@ bereinigte_daten <- raw_data %>% # Verwende die hochgeladenen Rohdaten und dann.
 
 # Beschreibung der Daten (AH)
 
+
 ```{r Datentransformation Kunden, include=TRUE}
 # Kunden
 # Tabelle nach Kunden sortiert
@@ -96,7 +97,7 @@ gesamtumsatz_kunden=7285025
 
 ```
 
-Im Datensatz sind **`r anzahl_kunden` Kunden** enhalten, die gesamt **`r gesamtbestellungen_kunden` Bestellungen** getätigt haben und dabei einen **Gesamtumsatz von `r gesamtumsatz_kunden`** erzeugt haben. Dabei wurden **durchschnittlich pro Kunde `r bestellungen_pro_kunde` Bestellungen** getätigt, allerdings zeigen die Daten, dass unter den Kunden mindestens einer ist, der 7676 Bestellungen getätigt hat. Damit dieser Ausreißer nicht so stark ins Gewicht fällt, betrachten wir zustäzlich den Median, dieser liegt bei `r bestellungen_pro_kunde_median`. Ausgelöst wurde dabei ein **durchschnittlicher Kundenumsatz von `r umsatz_pro_kunde_mean`**, der Median liegt hier bei `r umsatz_pro_kunde_median`.
+Der Zeitraum der Analyse bezieht sich auf den `r min(bereinigte_daten$date)` bis `r max(bereinigte_daten$date)`. Im Datensatz sind **`r anzahl_kunden` Kunden** enhalten, die gesamt **`r gesamtbestellungen_kunden` Bestellungen** getätigt haben und dabei einen **Gesamtumsatz von `r gesamtumsatz_kunden`** erzeugt haben. Dabei wurden **durchschnittlich pro Kunde `r bestellungen_pro_kunde` Bestellungen** getätigt, allerdings zeigen die Daten, dass unter den Kunden mindestens einer ist, der 7676 Bestellungen getätigt hat. Damit dieser Ausreißer nicht so stark ins Gewicht fällt, betrachten wir zustäzlich den Median, dieser liegt bei `r bestellungen_pro_kunde_median`. Ausgelöst wurde dabei ein **durchschnittlicher Kundenumsatz von `r umsatz_pro_kunde_mean`**, der Median liegt hier bei `r umsatz_pro_kunde_median`.
 
 ```{r Datentransformation Bestellungen und Produkt}
 ## Produkte und Bestellungen
@@ -107,22 +108,112 @@ product_summary <- bereinigte_daten %>%
   summarise(anzahl = n(),
             unit_price = mean(UnitPrice),
             revenue = anzahl * unit_price) %>% 
-  arrange(desc(revenue)) # arrange (zum sortieren einer Tabelle) mit desc dann absteigende Sortierung
+  arrange(desc(revenue))  # arrange (zum sortieren einer Tabelle) mit desc dann absteigende Sortierung 
+
 
 anzahl_verschiedene_produkte=3861
 
-höchster_produktumsatz=
-zweithöchster_produktumsatz="	Manual"
-dritthöchster_Produktumsatz="DOTCOM POSTAGE"
 
+# Revenue nach Produkt 
+# Produkt 1
+produkt_höchster_umsatz <- product_summary %>% head(1) %>% .[2]
+umsatz_umsatzstärkstes_produkt <- product_summary %>%  head(1) %>% .[5]
+# Produkt 2
+produkt2_höchster_umsatz <- product_summary %>% .[2] %>% slice(2)
+umsatz_umsatzstärkstes_produkt2 <- product_summary %>% .[5] %>% slice(2)
+# Produkt 3
+produkt3_höchster_umsatz <- product_summary %>% .[2] %>% slice(3)
+umsatz_umsatzstärkstes_produkt3 <- product_summary %>% .[5] %>% slice(3)
+unitPrice_umsatzstärkstes_produkt3 <- product_summary %>% .[4] %>% slice(3)
+
+umsatz_umsatzstärkstes_produkt6 <- product_summary %>% .[5] %>% slice(6)
+
+# Absatz nach Produkt
+
+product_summary2 <- bereinigte_daten %>%
+  group_by(StockCode, Description) %>%
+  summarise(anzahl = n(),
+            unit_price = mean(UnitPrice),
+            revenue = anzahl * unit_price) %>% 
+  arrange(desc(anzahl))
+# Produkt 1
+produkt_höchster_absatz <- product_summary2 %>% head(1) %>% .[2]
+absatz_absatzstärkstes_produkt <- product_summary2 %>%  head(1) %>% .[3]
+# Produkt 2
+produkt2_höchster_absatz <- product_summary2 %>% .[2] %>% slice(2)
+absatz_absatzstärkstes_produkt2 <- product_summary2 %>% .[3] %>% slice(2)
+# Produkt 3
+produkt3_höchster_absatz <- product_summary2 %>% .[2] %>% slice(3)
+absatz_absatzstärkstes_produkt3 <- product_summary2 %>% .[3] %>% slice(3)
+unitPrice_absatzstärkstes_produkt3 <- product_summary2 %>% .[4] %>% slice(3)
+
+produkt5_höchster_absatz <- product_summary2 %>% .[2] %>% slice(5)
+produkt5_höchster_absatz <- product_summary2 %>% .[2] %>% slice(6)
+
+# Produkt nach Preis
+
+product_summary3 <- bereinigte_daten %>%
+  group_by(StockCode, Description) %>%
+  summarise(anzahl = n(),
+            unit_price = mean(UnitPrice),
+            revenue = anzahl * unit_price) %>% 
+  arrange(desc(unit_price)) 
+
+
+```
+
+Insgemsamt wurden im Zeitverlauf **`r anzahl_verschiedene_produkte`** verschiedene Produkte bestellt. Das umsatzstärkste Produkt ist **`r product_summary %>% head(1) %>% .[2]`** mit **`r product_summary %>%  head(1) %>% .[5]` Umsatz**, darauf folgen **`r product_summary %>% .[2] %>% slice(2)`** mit **`r product_summary %>% .[5] %>% slice(2)` Umsatz** und **`r product_summary %>% .[2] %>% slice(3)`** mit **`r product_summary %>% .[5] %>% slice(3)` Umsatz**. Das Produkt `r product_summary %>% .[2] %>% slice(3)` ist zudem das teuerste Produkt des Unternehmens mit einem Kaufpreis von `r product_summary %>% .[4] %>% slice(3)` Pfund.
+
+
+```{r, echo= FALSE, results='asis'}
+# library laden
+
+library(knitr)
+library(kableExtra)
+
+# Tabelle Produkte nach Revenue
+
+kable(product_summary[1:10, 2:5], caption = "Produkte mit höchstem Umsatz")%>% 
+  kable_styling(bootstrap_options = c ("striped", "hover", "responsive", full_width = F, position = "float_right")) %>% 
+  column_spec(1, bold = T, background = "grey")
+
+```
+
+Betrachten wir den Absatz der Produkte, war das absatzstärkste Produkt **`r product_summary2 %>% head(1) %>% .[2]`** mit einer Anzahl von **`r product_summary2 %>%  head(1) %>% .[3]` Stück**, dieses war bei der Umsatz-Betrachtung zuvor auf Platz sechs mit `r product_summary %>% .[5] %>% slice(6)` Umsatz . Gefolgt von **`r product_summary2 %>% .[2] %>% slice(2)`** (`r product_summary2 %>% .[3] %>% slice(2)` Stück) und **`r product_summary2 %>% .[2] %>% slice(3)`** (`r product_summary2 %>% .[3] %>% slice(3)` Stück). 
+
+```{r, echo= FALSE}
+# Tabelle Produkte nach Absatz
+
+kable(product_summary2[1:10, 2:5], caption = "Produkte mit höchstem Absatz")%>% 
+  kable_styling(bootstrap_options = c ("striped", "hover", "responsive", full_width = F, position = "float_right")) %>% 
+  column_spec(1, bold = T, background = "grey") %>% 
+  row_spec(1, bold = T, color = "white", background = "red") %>% 
+  row_spec(3, bold = T, color = "white", background = "red") %>% 
+  row_spec(5, bold = T, color = "white", background = "red") 
   
+```
+
+Berücksichtigen wir die Ergebnisse aus der Umsatz-Analyse zuvor und den Absatz, sehen wir, dass die Produkte **`r product_summary2 %>% .[2] %>% slice(3)`** und **`r product_summary2 %>% .[2] %>% slice(5)`** bei beiden sehr gut abschneiden. **`r product_summary2 %>% .[2] %>% slice(3)`** ist dabei das teuerste Produkt mit einem Einzel-Kaufpreis von **`r product_summary2 %>% .[4] %>% slice(3)` Pfund**. Wie zuvor schon erwähnt zeigt auch das Produkt **`r product_summary2 %>% head(1) %>% .[2]`** bei Umsatz und Absatz jeweils gute Werte.
+
+## Bestellungen vor zeitlichem Hintergrund
+
+```{r, Bestellungen vor zeitlichem Hintergrund}
+
+library(RColorBrewer)
 
 # Wochentag, wie viele Bestellungen gab es je Wochentag
 weekday_summary <- bereinigte_daten %>%
   group_by(InvoiceNo, weekday) %>%
   summarise(anzahl_produkte = n()) %>%
   group_by(weekday) %>%
-  summarise(anzahl_bestellungen = n())
+  summarise(anzahl_bestellungen = n()) %>% 
+  arrange(desc(anzahl_bestellungen))
+
+ggplot(weekday_summary, aes(x = weekday, y = anzahl_bestellungen)) +
+  geom_col(position = "dodge", fill = "skyblue") +
+  labs(title = "Anzahl Bestellungen pro Wochentag") +
+  xlab("Wochentag") +
+  ylab("Anzahl Bestellungen") 
 
 # Uhrzeit, wie viele Bestellungen nach Tageszeit
 
@@ -132,6 +223,13 @@ hour_summary <- bereinigte_daten %>%
   group_by(hour) %>% 
   summarise(anzahl_bestellungen_tageszeit = n())
 
+
+ggplot(hour_summary, aes(hour, anzahl_bestellungen_tageszeit)) +
+  geom_bar(stat = "identity", fill = "skyblue") + # Anderer Weg als oben, hier mit geom_bar anstatt geom_col
+  labs(title = "Anzahl Bestellungen nach Uhrzeit") +
+  xlab("Uhrzeit") +
+  ylab("Anzahl Bestellungen") 
+
 # Wochentag nach Uhrzeit der Bestellung
 weekday_hour_summary <- bereinigte_daten %>%
   group_by(InvoiceNo, weekday, hour)%>%
@@ -139,6 +237,12 @@ weekday_hour_summary <- bereinigte_daten %>%
   group_by(hour, weekday) %>%
   summarise(anzahl_bestellungen = n())
 
+ggplot(weekday_hour_summary, aes(hour, anzahl_bestellungen)) + 
+  geom_col(position = "dodge", fill = "skyblue") +
+  facet_wrap(~ weekday, nrow = 2) +
+  xlab("Uhrzeit") +
+  ylab("Anzahl Bestellungen") +
+  labs(title = "Anzahl der Bestellungen seperat nach Uhrzeit und Wochentag")
 
 # Zeigt den Umsatz pro Bestellung an und wie viele Produkte pro Bestellung
 order_summary <- bereinigte_daten %>% 
@@ -147,20 +251,4 @@ order_summary <- bereinigte_daten %>%
   summarise(anzahl_verschiedene_produkte = n(),
             revenue_order = sum(revenue),
             anzahl_produkte = sum(Quantity))
-
 ```
-
-```{r echo= FALSE, results='asis'}
-# library laden
-
-library(knitr)
-library(kableExtra)
-
-# Tabelle erstellen
-
-kable(product_summary[1:5, 2:5], caption = "Produkte mit höchstem Umsatz")%>% 
-  kable_styling(bootstrap_options = c ("striped", "hover", "responsive", full_width = F, position = "float_right")) %>% 
-  column_spec(1, bold = T, background = "grey")
-
-```
-
