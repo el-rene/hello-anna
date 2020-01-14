@@ -46,7 +46,7 @@ bereinigte_daten <- raw_data %>% # Verwende die hochgeladenen Rohdaten und dann.
 
 # Beschreibung der Daten (AH)
 
-```{r Datentransformation, include=TRUE}
+```{r Datentransformation Kunden, include=TRUE}
 # Kunden
 # Tabelle nach Kunden sortiert
 
@@ -97,4 +97,70 @@ gesamtumsatz_kunden=7285025
 ```
 
 Im Datensatz sind **`r anzahl_kunden` Kunden** enhalten, die gesamt **`r gesamtbestellungen_kunden` Bestellungen** getätigt haben und dabei einen **Gesamtumsatz von `r gesamtumsatz_kunden`** erzeugt haben. Dabei wurden **durchschnittlich pro Kunde `r bestellungen_pro_kunde` Bestellungen** getätigt, allerdings zeigen die Daten, dass unter den Kunden mindestens einer ist, der 7676 Bestellungen getätigt hat. Damit dieser Ausreißer nicht so stark ins Gewicht fällt, betrachten wir zustäzlich den Median, dieser liegt bei `r bestellungen_pro_kunde_median`. Ausgelöst wurde dabei ein **durchschnittlicher Kundenumsatz von `r umsatz_pro_kunde_mean`**, der Median liegt hier bei `r umsatz_pro_kunde_median`.
+
+```{r Datentransformation Bestellungen und Produkt}
+## Produkte und Bestellungen
+
+
+product_summary <- bereinigte_daten %>%
+  group_by(StockCode, Description) %>%
+  summarise(anzahl = n(),
+            unit_price = mean(UnitPrice),
+            revenue = anzahl * unit_price) %>% 
+  arrange(desc(revenue)) # arrange (zum sortieren einer Tabelle) mit desc dann absteigende Sortierung
+
+anzahl_verschiedene_produkte=3861
+
+höchster_produktumsatz=
+zweithöchster_produktumsatz="	Manual"
+dritthöchster_Produktumsatz="DOTCOM POSTAGE"
+
+  
+
+# Wochentag, wie viele Bestellungen gab es je Wochentag
+weekday_summary <- bereinigte_daten %>%
+  group_by(InvoiceNo, weekday) %>%
+  summarise(anzahl_produkte = n()) %>%
+  group_by(weekday) %>%
+  summarise(anzahl_bestellungen = n())
+
+# Uhrzeit, wie viele Bestellungen nach Tageszeit
+
+hour_summary <- bereinigte_daten %>% 
+  group_by(InvoiceNo, hour) %>% 
+  summarise(anzahl_produkte = n()) %>% 
+  group_by(hour) %>% 
+  summarise(anzahl_bestellungen_tageszeit = n())
+
+# Wochentag nach Uhrzeit der Bestellung
+weekday_hour_summary <- bereinigte_daten %>%
+  group_by(InvoiceNo, weekday, hour)%>%
+  summarise(anzahl_produkte = n())%>%
+  group_by(hour, weekday) %>%
+  summarise(anzahl_bestellungen = n())
+
+
+# Zeigt den Umsatz pro Bestellung an und wie viele Produkte pro Bestellung
+order_summary <- bereinigte_daten %>% 
+  mutate(revenue = UnitPrice*Quantity) %>% 
+  group_by(InvoiceNo, weekday, hour) %>% 
+  summarise(anzahl_verschiedene_produkte = n(),
+            revenue_order = sum(revenue),
+            anzahl_produkte = sum(Quantity))
+
+```
+
+```{r echo= FALSE, results='asis'}
+# library laden
+
+library(knitr)
+library(kableExtra)
+
+# Tabelle erstellen
+
+kable(product_summary[1:5, 2:5], caption = "Produkte mit höchstem Umsatz")%>% 
+  kable_styling(bootstrap_options = c ("striped", "hover", "responsive", full_width = F, position = "float_right")) %>% 
+  column_spec(1, bold = T, background = "grey")
+
+```
 
