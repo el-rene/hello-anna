@@ -98,7 +98,7 @@ gesamtumsatz_kunden=7285025
 
 ```
 
-Der Zeitraum der Analyse bezieht sich auf den `r min(bereinigte_daten$date)` bis `r max(bereinigte_daten$date)`. Im Datensatz sind **`r anzahl_kunden` Kunden** enhalten, die gesamt **`r gesamtbestellungen_kunden` Bestellungen** getätigt haben und dabei einen **Gesamtumsatz von `r gesamtumsatz_kunden`** erzeugt haben. Dabei wurden **durchschnittlich pro Kunde `r bestellungen_pro_kunde` Bestellungen** getätigt, allerdings zeigen die Daten, dass unter den Kunden mindestens einer ist, der 7676 Bestellungen getätigt hat. Damit dieser Ausreißer nicht so stark ins Gewicht fällt, betrachten wir zustäzlich den Median, dieser liegt bei `r bestellungen_pro_kunde_median`. Ausgelöst wurde dabei ein **durchschnittlicher Kundenumsatz von `r umsatz_pro_kunde_mean`**, der Median liegt hier bei `r umsatz_pro_kunde_median`.
+Der Zeitraum der Analyse bezieht sich auf den `r min(bereinigte_daten$date)` bis `r max(bereinigte_daten$date)`. Im Datensatz sind **`r anzahl_kunden` Kunden** enhalten, die gesamt **`r gesamtbestellungen_kunden` Bestellungen** getätigt haben und dabei einen **Gesamtumsatz von `r gesamtumsatz_kunden`** erzeugt haben. Dabei wurden **durchschnittlich pro Kunde `r bestellungen_pro_kunde` Bestellungen** getätigt, allerdings zeigen die Daten, dass unter den Kunden mindestens einer ist, der 7676 Bestellungen getätigt hat. Damit dieser Ausreißer nicht so stark ins Gewicht fällt, betrachten wir zustäzlich den Median, dieser liegt bei `r bestellungen_pro_kunde_median`. Ausgelöst wurde dabei ein **durchschnittlicher Kundenumsatz von `r umsatz_pro_kunde_mean`**, der Median liegt hier bei `r umsatz_pro_kunde_median`. 
 
 ```{r Datentransformation Bestellungen und Produkt, include=FALSE}
 ## Produkte und Bestellungen
@@ -160,10 +160,21 @@ product_summary3 <- bereinigte_daten %>%
             revenue = anzahl * unit_price) %>% 
   arrange(desc(unit_price)) 
 
+# Wie viele Produkte pro Bestellung? 
+# Zeigt den Umsatz pro Bestellung an und wie viele Produkte pro Bestellung
+order_summary <- bereinigte_daten %>% 
+  mutate(revenue = UnitPrice*Quantity) %>% 
+  group_by(InvoiceNo, weekday, hour) %>% 
+  summarise(anzahl_verschiedene_produkte = n(),
+            revenue_order = sum(revenue),
+            anzahl_produkte = sum(Quantity))
 
+produkte_pro_bestellung_mean <- mean(order_summary$anzahl_produkte)
+summary(order_summary$anzahl_produkte)
+produkte_pro_bestellung_median <- median(order_summary$anzahl_produkte)
 ```
 
-Insgemsamt wurden im Zeitverlauf **`r anzahl_verschiedene_produkte`** verschiedene Produkte bestellt. Das umsatzstärkste Produkt ist **`r product_summary %>% head(1) %>% .[2]`** mit **`r product_summary %>%  head(1) %>% .[5]` Umsatz**, darauf folgen **`r product_summary %>% .[2] %>% slice(2)`** mit **`r product_summary %>% .[5] %>% slice(2)` Umsatz** und **`r product_summary %>% .[2] %>% slice(3)`** mit **`r product_summary %>% .[5] %>% slice(3)` Umsatz**. Das Produkt `r product_summary %>% .[2] %>% slice(3)` ist zudem das teuerste Produkt des Unternehmens mit einem Kaufpreis von `r product_summary %>% .[4] %>% slice(3)` Pfund.
+Insgemsamt wurden im Zeitverlauf **`r anzahl_verschiedene_produkte`** verschiedene Produkte bestellt, eine Bestellung umfasst im Durchschnitt `r mean(order_summary$anzahl_verschiedene_produkte)` verschiedene Produktearten und gesamt `r median(order_summary$anzahl_produkte)` Einzelprodukte. Das umsatzstärkste Produkt ist **`r product_summary %>% head(1) %>% .[2]`** mit **`r product_summary %>%  head(1) %>% .[5]` Umsatz**, darauf folgen **`r product_summary %>% .[2] %>% slice(2)`** mit **`r product_summary %>% .[5] %>% slice(2)` Umsatz** und **`r product_summary %>% .[2] %>% slice(3)`** mit **`r product_summary %>% .[5] %>% slice(3)` Umsatz**. Das Produkt `r product_summary %>% .[2] %>% slice(3)` ist zudem das teuerste Produkt des Unternehmens mit einem Kaufpreis von `r product_summary %>% .[4] %>% slice(3)` Pfund.
 
 
 ```{r, echo= TRUE, results='asis', message=FALSE}
@@ -264,15 +275,68 @@ ggplot(weekday_hour_summary, aes(hour, anzahl_bestellungen)) +
   ylab("Anzahl Bestellungen") +
   labs(title = "Anzahl der Bestellungen seperat nach Uhrzeit und Wochentag")
 
-# Zeigt den Umsatz pro Bestellung an und wie viele Produkte pro Bestellung
-order_summary <- bereinigte_daten %>% 
-  mutate(revenue = UnitPrice*Quantity) %>% 
-  group_by(InvoiceNo, weekday, hour) %>% 
-  summarise(anzahl_verschiedene_produkte = n(),
-            revenue_order = sum(revenue),
-            anzahl_produkte = sum(Quantity))
 ```
 
+
+```{r, echo=FALSE, warning= FALSE}
+# Umsatz nach Wochentag / Uhrzeit
+
+# Wochentag, wie viel Umsatz gab es je Wochentag
+
+revenue_weekday_summary <- bereinigte_daten %>%
+  group_by(InvoiceNo, weekday) %>%
+  summarise(quantity = sum(Quantity),
+            revenue = sum(Quantity * UnitPrice))%>%
+  group_by(weekday) %>% 
+  summarise(revenue = sum(revenue))
+ 
+
+# Uhrzeit, wie viele Bestellungen nach Tageszeit
+
+revenue_hour_summary <- bereinigte_daten %>% 
+  group_by(InvoiceNo, hour) %>% 
+  summarise(quantity = sum(Quantity),
+            revenue = sum(Quantity * UnitPrice)) %>%
+  group_by(hour) %>%
+  summarise(revenue= sum(revenue))
+  
+# Revenue nach Wochentag 
+
+ggplot(revenue_weekday_summary, aes(x = weekday, y = revenue)) +
+  geom_col(position = "dodge", fill = "navy") +
+  labs(title = "Umsatz pro Wochentag") +
+  xlab("Wochentag")+
+  ylab("Umsatz") 
+
+# Revenue nach Uhrzeit 
+
+ggplot(revenue_hour_summary, aes(hour, revenue)) +
+  geom_bar(stat = "identity", fill = "navy") + # Anderer Weg als oben, hier mit geom_bar anstatt geom_col
+  labs(title = "Umsatz nach Uhrzeit") +
+  xlab("Uhrzeit") +
+  ylab("Umsatz") 
+
+# Umsatz nach Wochentag und Uhrzeit
+
+revenue_weekday_hour_summary <- bereinigte_daten %>%
+  group_by(InvoiceNo, weekday, hour)%>%
+  summarise(quantity = sum(Quantity),
+            revenue = sum(Quantity * UnitPrice)) %>%
+  group_by(hour, weekday) %>% 
+  summarise(revenue= sum(revenue))
+
+
+# Umsatz seperat nach Uhrzeit und jeweiligem Wochentag
+
+ggplot(revenue_weekday_hour_summary, aes(hour, revenue)) + 
+  geom_col(position = "dodge", fill = "navy") +
+  facet_wrap(~ weekday, nrow = 2) +
+  xlab("Uhrzeit") +
+  ylab("Umsatz") +
+  labs(title = "Umsatz seperat nach Uhrzeit und Wochentag")
+ 
+
+```
 
 # Preis-Analyse
 
@@ -281,10 +345,55 @@ order_summary <- bereinigte_daten %>%
 
 ggplot(product_summary, aes(unit_price, anzahl)) +
   geom_point() +
-  labs(title = "Verkaufte Menge eines Produktes im Verhältnis zu dessen Produktpreis")
+  labs(title = "Verkaufte Menge eines Produktes im Verhältnis zu dessen Produktpreis") # log dazu
+
+# Ausreißer
+ausreißer_produkte <- product_summary %>% 
+    filter(unit_price>100 |anzahl>1000) %>% .[2:5]
+
+kable(ausreißer_produkte, caption = "Ausreißer") %>% 
+  kable_styling(bootstrap_options = c ("striped", "hover", "responsive", full_width = F, position = "float_right")) %>% 
+  column_spec(1, bold = T, background = "grey")
+
+
 
 ggplot(product_summary, aes(unit_price, revenue)) +
   geom_point() +
-  labs(title = "Umsatz eines Produktes im Verhältnis zu dessen Produktpreis") # ?????? Hier nur für die Ausreißer Legende hinzufügen
+  labs(title = "Umsatz eines Produktes im Verhältnis zu dessen Produktpreis")  
+
+# Ausreißer
+ausreißer_produkte2 <- product_summary %>% 
+    filter(unit_price>100 |revenue>5000) %>% .[2:5]
+
+kable(ausreißer_produkte2, caption = "Ausreißer") %>% 
+  kable_styling(bootstrap_options = c ("striped", "hover", "responsive", full_width = F, position = "float_right")) %>% 
+  column_spec(1, bold = T, background = "grey")
+  
+ausreißer_produkte <- product_summary %>% 
+    filter(unit_price>100 |anzahl>1000) 
+
+ausreißer_bei_anzahl_u_revenue <- ausreißer_produkte %>%
+  semi_join(ausreißer_produkte2, by = c("Description"))
+
+ausreißer_unterschiedlich <- ausreißer_produkte %>%
+  anti_join(ausreißer_produkte2, by = c("Description"))
+
+ggplot(product_summary, aes(unit_price, revenue)) +
+  geom_point() +
+  labs(title = "Umsatz eines Produktes im Verhältnis zu dessen Produktpreis") 
+```
+
+```{r}
+# Umsatz über gesamten Zeitraum 
+
+umsatz_zeitverlauf <- bereinigte_daten %>% 
+  group_by(date) %>% 
+  summarise(revenue= sum(Quantity*UnitPrice)) %>% 
+  mutate(date= date(date))
+  
+  library(scales)
+
+ggplot(umsatz_zeitverlauf, aes(date, revenue)) +
+  geom_area() + scale_x_date(breaks = date_breaks("months"), labels = date_format("%b"))
 ```
 
