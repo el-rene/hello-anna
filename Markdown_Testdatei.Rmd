@@ -383,6 +383,28 @@ ggplot(product_summary, aes(unit_price, revenue)) +
   labs(title = "Umsatz eines Produktes im Verhältnis zu dessen Produktpreis") 
 ```
 
+```{r,Pareto Analyse Produkte}
+# Kunden und dann Anzahl Bestellungen, durchschnittlicher Bestellwert und Umsatz
+
+pareto_analyse_produkt <- customer_summary %>% 
+  select(CustomerID, orders, avg_order_val,revenue) %>% 
+  arrange(desc(revenue)) %>% 
+  mutate(cum.revenue=cumsum(revenue)/sum(revenue)*100) %>% 
+  mutate(Kategorie=ifelse(cum.revenue<=20, "A", 
+                          ifelse(cum.revenue > 80, "C", "B")))
+  
+# Verteilung ABC
+install.packages("ABCanalysis")
+library(ABCanalysis)
+
+data(pareto_analyse_produkt)
+ggplot(pareto_analyse_produkt, aes(CustomerID, cum.revenue)) + geom_col(aes(fill=Kategorie)) 
+
+
+```
+
+
+
 ```{r}
 # Umsatz über gesamten Zeitraum 
 
@@ -394,6 +416,10 @@ umsatz_zeitverlauf <- bereinigte_daten %>%
   library(scales)
 
 ggplot(umsatz_zeitverlauf, aes(date, revenue)) +
-  geom_area() + scale_x_date(breaks = date_breaks("months"), labels = date_format("%b"))
+  geom_area(fill="skyblue") + 
+  scale_x_date(breaks = date_breaks("months"), labels = date_format("%b")) +
+  labs(title = "Umsatzverlauf im Beobachtungszeitraum") +
+  xlab("Monat") +
+  ylab("Umsatz")
 ```
 
