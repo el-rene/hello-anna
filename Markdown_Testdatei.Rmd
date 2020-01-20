@@ -480,6 +480,7 @@ summary(regeln)
 
 inspect(sort(regeln, by = "confidence"))
 
-head(regeln, n = 10, by = "confidence")
-
 ```
+
+Bisher sind die Regeln relativ offensichtlich (wenn Farbe X gekauft wird, dann auch Farbe Y). 
+@Jörn: Hast du einen Tipp wie wir die Qualität der Regeln verbessern könnten, so dass nicht nur sehr offensichtliche Dinge zum Vorschein kommen. 
