@@ -448,21 +448,23 @@ transaktionsdaten <- read.transactions(file = "daten_warenkorbanalyse.csv",
 summary(transaktionsdaten)
 ```
 
+Die Daten wurden auf einen Produktpreis von größer als 5 Pfund gefilter, um sich auf Regeln zu fokusieren, hinter denen ein gewisser Umsatz steht. 
+
 ## Daten visualisieren
 
 ```{r Visualisierungen Warenkorbanalyse hist, echo = FALSE}
 
-hist(size(transaktionsdaten), col = "lightblue")
+hist(size(transaktionsdaten), col = "lightblue", xlab = "Produktanzahl pro Bestellung", ylab = "Häufigkeit", main = "Histogram der Produktanzahl pro Bestellung")
 
 ```
 
-Aus dem Histogram geht hervor, dass der Großteil der Bestellungen eine geringe Anzahl an Artikeln enthält. 
-Betracht man den folgenden Boxplot, so wird deutlich, dass es viele Ausreißer nach oben gibt. 
+Aus dem Histogram geht hervor, dass der Großteil der Bestellungen maximal 10 verschiedene Artikel enthält. 
+Betracht man den folgenden Boxplot, so werden die Ausreißer noch einmal deutlich. 
 @Jörn: Sollten diese rausgefiltert werden, da sie die Analyse verzerren?
 
 ```{r Visualisierungen Warenkorbanalyse boxplot, echo = FALSE}
 
-boxplot(size(transaktionsdaten), col = "lightblue", main="Boxplot of Transaction data")
+boxplot(size(transaktionsdaten), col = "lightblue", main="Boxplot der Produktanzahl pro Bestellung")
 
 regeln  <-  apriori(transaktionsdaten, 
                     parameter = list(support = 0.01, confidence = 0.5))
@@ -490,4 +492,3 @@ inspect(sort(regeln, by = "confidence"))
 Bisher sind die Regeln relativ offensichtlich (wenn Farbe X gekauft wird, dann auch Farbe Y). 
 @Jörn: Hast du einen Tipp wie wir die Qualität der Regeln verbessern könnten, so dass nicht nur sehr offensichtliche Dinge zum Vorschein kommen. 
 
-Master reloaded
