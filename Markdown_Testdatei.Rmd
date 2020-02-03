@@ -1,6 +1,6 @@
 ---
-title: "Markdown_Testdatei.Rmd"
-author: "Anna"
+title: "Transaktionsanalyse"
+author: "Anna & René"
 date: "1/8/2020"
 output: html_document
 ---
@@ -11,7 +11,8 @@ output: html_document
 library(readxl)
 library(tidyverse)
 library(lubridate) 
-
+library(knitr)
+library(kableExtra)
 ```
 
 
@@ -23,7 +24,7 @@ raw_data <- read_excel("Online_Retail_Data.xlsx")
 ```
 
 
-```{r Manipulation der Rohdaten, include=FALSE}
+```{r Manipulation der Rohdaten, include=TRUE, message=FALSE}
 # Manipulation der Daten
 
 weekend <- c("Sa", "So") # Sa. und So. als Value, um Weekend-Spalte im nächsten Schritt zu erzeugen
@@ -42,6 +43,8 @@ bereinigte_daten <- raw_data %>% # Verwende die hochgeladenen Rohdaten und dann.
          hour = hour(InvoiceDate), # erzeuge eine zusätzliche hour Spalte,
          weekday = wday(InvoiceDate, label = TRUE), # eine weekdaySpalte
          is_weekend = weekday %in% weekend) # sowie eine Spalte ob eine Order am Wochenende erfolgte. 
+
+glimpse(bereinigte_daten)
 
 ```
 
@@ -178,13 +181,6 @@ produkte_pro_bestellung_median <- median(order_summary$anzahl_produkte)
 Insgemsamt wurden im Zeitverlauf **`r anzahl_verschiedene_produkte`** verschiedene Produkte bestellt, eine Bestellung umfasst im Durchschnitt `r mean(order_summary$anzahl_verschiedene_produkte)` verschiedene Produktearten und gesamt `r median(order_summary$anzahl_produkte)` Einzelprodukte. Das umsatzstärkste Produkt ist **`r product_summary %>% head(1) %>% .[2]`** mit **`r product_summary %>%  head(1) %>% .[5]` Umsatz**, darauf folgen **`r product_summary %>% .[2] %>% slice(2)`** mit **`r product_summary %>% .[5] %>% slice(2)` Umsatz** und **`r product_summary %>% .[2] %>% slice(3)`** mit **`r product_summary %>% .[5] %>% slice(3)` Umsatz**. Das Produkt `r product_summary %>% .[2] %>% slice(3)` ist zudem das teuerste Produkt des Unternehmens mit einem Kaufpreis von `r product_summary %>% .[4] %>% slice(3)` Pfund.
 
 
-```{r, echo= TRUE, results='asis', message=FALSE}
-# library laden
-
-library(knitr)
-library(kableExtra)
-```
-
 ```{r, echo=FALSE}
 # Tabelle Produkte nach Revenue
 
@@ -263,7 +259,7 @@ weekday_hour_summary <- bereinigte_daten %>%
 
 ```
 
-Schauen wir uns die Bestellzeit für jeden Tag einzeln an, dann sehen wir, dass an allen Tagen die meisten Bestellungen in Stunde 12 eingehen. Außerdem sehen wir, dass donnerstags vergleichsweise länger bestellt wird.4
+Schauen wir uns die Bestellzeit für jeden Tag einzeln an, dann sehen wir, dass an allen Tagen die meisten Bestellungen in Stunde 12 eingehen. Außerdem sehen wir, dass donnerstags vergleichsweise länger bestellt wird.
 
 ```{r, echo=FALSE}
 
@@ -346,7 +342,8 @@ ggplot(revenue_weekday_hour_summary, aes(hour, revenue)) +
 
 ggplot(product_summary, aes(unit_price, anzahl)) +
   geom_point() +
-  labs(title = "Verkaufte Menge eines Produktes im Verhältnis zu dessen Produktpreis") # log dazu
+  labs(title = "Verkaufte Menge eines Produktes im Verhältnis zu dessen Produktpreis") +
+  scale_x_log10()
 
 # Ausreißer
 ausreißer_produkte <- product_summary %>% 
@@ -360,7 +357,8 @@ kable(ausreißer_produkte, caption = "Ausreißer") %>%
 
 ggplot(product_summary, aes(unit_price, revenue)) +
   geom_point() +
-  labs(title = "Umsatz eines Produktes im Verhältnis zu dessen Produktpreis")  
+  labs(title = "Umsatz eines Produktes im Verhältnis zu dessen Produktpreis") +
+  scale_x_log10()
 
 # Ausreißer
 ausreißer_produkte2 <- product_summary %>% 
@@ -393,12 +391,19 @@ pareto_analyse_produkt <- customer_summary %>%
   mutate(cum.revenue=cumsum(revenue)/sum(revenue)*100) %>% 
   mutate(Kategorie=ifelse(cum.revenue<=20, "A", 
                           ifelse(cum.revenue > 80, "C", "B")))
+
+pareto_analyse_produkt_neu <- pareto_analyse_produkt %>% 
+  group_by(Kategorie, CustomerID) %>% 
+  select(cum.revenue, orders, avg_order_val,revenue)
   
 # Verteilung ABC
 library(ABCanalysis)
 
-data(pareto_analyse_produkt)
-ggplot(pareto_analyse_produkt, aes(CustomerID, cum.revenue)) + geom_col(aes(fill=Kategorie)) 
+ggplot(pareto_analyse_produkt_neu, aes(x=Kategorie, y=orders)) +
+  geom_bar(stat = "identity", aes(fill=cum.revenue)) 
+
+  # sort.by.groups = TRUE
+  #geom_line(aes(x=Kategorie, y=cum.revenue))
 
 
 ```
