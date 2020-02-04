@@ -377,9 +377,6 @@ ausreißer_bei_anzahl_u_revenue <- ausreißer_produkte %>%
 ausreißer_unterschiedlich <- ausreißer_produkte %>%
   anti_join(ausreißer_produkte2, by = c("Description"))
 
-ggplot(product_summary, aes(unit_price, revenue)) +
-  geom_point() +
-  labs(title = "Umsatz eines Produktes im Verhältnis zu dessen Produktpreis") 
 ```
 
 ```{r,Pareto Analyse Produkte}
@@ -392,15 +389,12 @@ pareto_analyse_produkt <- customer_summary %>%
   mutate(Kategorie=ifelse(cum.revenue<=20, "A", 
                           ifelse(cum.revenue > 80, "C", "B")))
 
-pareto_analyse_produkt_neu <- pareto_analyse_produkt %>% 
-  group_by(Kategorie, CustomerID) %>% 
-  select(cum.revenue, orders, avg_order_val,revenue)
   
 # Verteilung ABC
 library(ABCanalysis)
 
-ggplot(pareto_analyse_produkt_neu, aes(x=Kategorie, y=orders)) +
-  geom_bar(stat = "identity", aes(fill=cum.revenue)) 
+ggplot(pareto_analyse_produkt, aes(x=Kategorie, y=orders)) +
+  geom_bar(stat = "identity") 
 
   # sort.by.groups = TRUE
   #geom_line(aes(x=Kategorie, y=cum.revenue))
