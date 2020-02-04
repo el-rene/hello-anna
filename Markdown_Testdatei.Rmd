@@ -342,6 +342,10 @@ ggplot(revenue_weekday_hour_summary, aes(hour, revenue)) +
 
 ggplot(product_summary, aes(unit_price, anzahl)) +
   geom_point() +
+  labs(title = "Verkaufte Menge eines Produktes im Verhältnis zu dessen Produktpreis")
+
+ggplot(product_summary, aes(unit_price, anzahl)) +
+  geom_point() +
   labs(title = "Verkaufte Menge eines Produktes im Verhältnis zu dessen Produktpreis") +
   scale_x_log10()
 
@@ -357,8 +361,7 @@ kable(ausreißer_produkte, caption = "Ausreißer") %>%
 
 ggplot(product_summary, aes(unit_price, revenue)) +
   geom_point() +
-  labs(title = "Umsatz eines Produktes im Verhältnis zu dessen Produktpreis") +
-  scale_x_log10()
+  labs(title = "Umsatz eines Produktes im Verhältnis zu dessen Produktpreis")
 
 # Ausreißer
 ausreißer_produkte2 <- product_summary %>% 
@@ -381,6 +384,10 @@ ggplot(product_summary, aes(unit_price, revenue)) +
   geom_point() +
   labs(title = "Umsatz eines Produktes im Verhältnis zu dessen Produktpreis") 
 ```
+
+Verteilung des Preises
+Verteilung des Umsatzes mit Histogram
+Umsatz vs. Preis nur hohe aussagekraft wenn die Kurve fallend ist
 
 ```{r,Pareto Analyse Produkte}
 # Kunden und dann Anzahl Bestellungen, durchschnittlicher Bestellwert und Umsatz
@@ -485,7 +492,7 @@ Ziel ist es Regeln zu finden, die möglichst weit oben rechts und in dunkelrot g
 
 summary(regeln)
 
-inspect(sort(regeln, by = "confidence"))
+inspect(sort(regeln, by = "lift"))
 
 ```
 
