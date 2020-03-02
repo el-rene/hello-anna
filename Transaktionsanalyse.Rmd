@@ -203,6 +203,46 @@ produkte_pro_bestellung_median <- median(order_summary$anzahl_produkte)
 
 Insgemsamt wurden im Zeitverlauf **`r anzahl_verschiedene_produkte`** verschiedene Produkte bestellt, eine Bestellung umfasst im Durchschnitt `r mean(order_summary$anzahl_verschiedene_produkte)` verschiedene Produktearten und gesamt `r median(order_summary$anzahl_produkte)` Einzelprodukte. Das umsatzstärkste Produkt ist **`r product_summary %>% head(1) %>% .[2]`** mit **`r product_summary %>%  head(1) %>% .[5]` Umsatz**, darauf folgen **`r product_summary %>% .[2] %>% slice(2)`** mit **`r product_summary %>% .[5] %>% slice(2)` Umsatz** und **`r product_summary %>% .[2] %>% slice(3)`** mit **`r product_summary %>% .[5] %>% slice(3)` Umsatz**. Das Produkt `r product_summary %>% .[2] %>% slice(3)` ist zudem das teuerste Produkt des Unternehmens mit einem Kaufpreis von `r product_summary %>% .[4] %>% slice(3)` Pfund.
 
+```{r, echo=FALSE, message=FALSE}
+# Umsatz über gesamten Zeitraum 
+
+umsatz_zeitverlauf <- bereinigte_daten %>% 
+  group_by(date) %>% 
+  summarise(revenue= sum(Quantity*UnitPrice)) %>% 
+  mutate(date= date(date))
+  
+  library(scales)
+
+ggplot(umsatz_zeitverlauf, aes(date, revenue)) +
+  geom_area(fill="skyblue") + 
+  scale_x_date(breaks = date_breaks("months"), labels = date_format("%b")) +
+  labs(title = "Umsatzverlauf im Beobachtungszeitraum") +
+  xlab("Monat") +
+  ylab("Umsatz")
+
+weekday_summary <- bereinigte_daten %>%
+  group_by(InvoiceNo, weekday) %>%
+  summarise(anzahl_produkte = n(),
+            quantity = sum(Quantity),
+            revenue = sum(Quantity * UnitPrice)) %>%
+  group_by(weekday) %>%
+  summarise(anzahl_bestellungen = n(),
+            revenue = sum(revenue), 
+            bestellwert = revenue/anzahl_bestellungen)%>% 
+  arrange(desc(anzahl_bestellungen))
+  
+  
+
+```
+
+## Übersicht Bestellungen 
+```{r, echo=FALSE}
+# Übersicht Bestellungen 
+
+kable(weekday_summary)%>% 
+  kable_styling() 
+```
+
 
 ```{r, echo=FALSE}
 # Tabelle Produkte nach Revenue
@@ -231,12 +271,10 @@ Berücksichtigen wir die Ergebnisse aus der Umsatz-Analyse zuvor und den Absatz,
 ```{r, Datentransformation Zeit, echo=FALSE}
 # Wochentag, wie viele Bestellungen gab es je Wochentag
 
-weekday_summary <- bereinigte_daten %>%
-  group_by(InvoiceNo, weekday) %>%
-  summarise(anzahl_produkte = n()) %>%
-  group_by(weekday) %>%
-  summarise(anzahl_bestellungen = n()) %>% 
-  arrange(desc(anzahl_bestellungen))
+
+
+
+
 
 # Uhrzeit, wie viele Bestellungen nach Tageszeit
 
@@ -254,23 +292,9 @@ hour_summary <- bereinigte_daten %>%
 Betrachten wir die Bestellungen nach Wochentagen, fällt auf, dass die **meisten Bestellungen  (`r weekday_summary %>% .[2] %>% slice(1)`) am Donnerstag** erfolgen, Samstags gingen allerdings gar keine Bestellungen ein. Schauen wir uns die Tageszeit an zu der die Bestellungen gesamt erfolgten, sehen wir, dass über alle Tage verteilt am meisten Bestellungen (`r hour_summary %>% .[2] %>% slice(1)`) in **Stunde `r hour_summary %>% .[1] %>% slice(1)`** erfolgen.
 ```{r, Bestellungen vor zeitlichem Hintergrund, echo=FALSE}
 
+
 library(RColorBrewer)
 
-# Bestellungen nach Wochentag 
-
-ggplot(weekday_summary, aes(x = weekday, y = anzahl_bestellungen)) +
-  geom_col(position = "dodge", fill = "skyblue") +
-  labs(title = "Anzahl Bestellungen pro Wochentag") +
-  xlab("Wochentag") +
-  ylab("Anzahl Bestellungen") 
-
-# Bestellungen nach Uhrzeit 
-
-ggplot(hour_summary, aes(hour, anzahl_bestellungen_tageszeit)) +
-  geom_bar(stat = "identity", fill = "skyblue") + # Anderer Weg als oben, hier mit geom_bar anstatt geom_col
-  labs(title = "Anzahl Bestellungen nach Uhrzeit") +
-  xlab("Uhrzeit") +
-  ylab("Anzahl Bestellungen") 
 
 # Wochentag nach Uhrzeit der Bestellung
 weekday_hour_summary <- bereinigte_daten %>%
@@ -303,12 +327,7 @@ ggplot(weekday_hour_summary, aes(hour, anzahl_bestellungen)) +
 
 # Wochentag, wie viel Umsatz gab es je Wochentag
 
-revenue_weekday_summary <- bereinigte_daten %>%
-  group_by(InvoiceNo, weekday) %>%
-  summarise(quantity = sum(Quantity),
-            revenue = sum(Quantity * UnitPrice))%>%
-  group_by(weekday) %>% 
-  summarise(revenue = sum(revenue))
+
  
 
 # Uhrzeit, wie viele Bestellungen nach Tageszeit
@@ -319,22 +338,6 @@ revenue_hour_summary <- bereinigte_daten %>%
             revenue = sum(Quantity * UnitPrice)) %>%
   group_by(hour) %>%
   summarise(revenue= sum(revenue))
-  
-# Revenue nach Wochentag 
-
-ggplot(revenue_weekday_summary, aes(x = weekday, y = revenue)) +
-  geom_col(position = "dodge", fill = "navy") +
-  labs(title = "Umsatz pro Wochentag") +
-  xlab("Wochentag")+
-  ylab("Umsatz") 
-
-# Revenue nach Uhrzeit 
-
-ggplot(revenue_hour_summary, aes(hour, revenue)) +
-  geom_bar(stat = "identity", fill = "navy") + # Anderer Weg als oben, hier mit geom_bar anstatt geom_col
-  labs(title = "Umsatz nach Uhrzeit") +
-  xlab("Uhrzeit") +
-  ylab("Umsatz") 
 
 # Umsatz nach Wochentag und Uhrzeit
 
@@ -360,48 +363,22 @@ ggplot(revenue_weekday_hour_summary, aes(hour, revenue)) +
 
 # Preis-Analyse
 
-```{r,product_summary}
-# Scatterplot UnitPrice und Quantity
+```{r,product_summary, echo=FALSE}
+# Produktpreise
 
-ggplot(product_summary, aes(unit_price, anzahl)) +
-  geom_point() +
-  labs(title = "Verkaufte Menge eines Produktes im Verhältnis zu dessen Produktpreis")
+produkt_preise_summary <- bereinigte_daten %>%
+  group_by(Country) %>%
+  summarise(mittelwert_produktpreis = mean(UnitPrice),
+            median_produktpreis = median(UnitPrice),
+            min_produktpreis = min(UnitPrice),
+            max_produktpreis = max(UnitPrice))%>%
+  group_by(Country)
 
-ggplot(product_summary, aes(unit_price, anzahl)) +
-  geom_point() +
-  labs(title = "Verkaufte Menge eines Produktes im Verhältnis zu dessen Produktpreis") +
-  scale_x_log10()
-
-# Ausreißer
-ausreißer_produkte <- product_summary %>% 
-    filter(unit_price>100 |anzahl>1000) %>% .[2:5]
-
-kable(ausreißer_produkte, caption = "Ausreißer") %>% 
-  kable_styling(bootstrap_options = c ("striped", "hover", "responsive", full_width = F, position = "float_right")) %>% 
-  column_spec(1, bold = T, background = "grey")
+kable(produkt_preise_summary) %>% 
+  kable_styling()
 
 
-
-ggplot(product_summary, aes(unit_price, revenue)) +
-  geom_point() +
-  labs(title = "Umsatz eines Produktes im Verhältnis zu dessen Produktpreis")
-
-# Ausreißer
-ausreißer_produkte2 <- product_summary %>% 
-    filter(unit_price>100 |revenue>5000) %>% .[2:5]
-
-kable(ausreißer_produkte2, caption = "Ausreißer") %>% 
-  kable_styling(bootstrap_options = c ("striped", "hover", "responsive", full_width = F, position = "float_right")) %>% 
-  column_spec(1, bold = T, background = "grey")
   
-ausreißer_produkte <- product_summary %>% 
-    filter(unit_price>100 |anzahl>1000) 
-
-ausreißer_bei_anzahl_u_revenue <- ausreißer_produkte %>%
-  semi_join(ausreißer_produkte2, by = c("Description"))
-
-ausreißer_unterschiedlich <- ausreißer_produkte %>%
-  anti_join(ausreißer_produkte2, by = c("Description"))
 
 ```
 
@@ -410,47 +387,11 @@ Verteilung des Umsatzes mit Histogram
 Umsatz vs. Preis nur hohe aussagekraft wenn die Kurve fallend ist
 
 ```{r,Pareto Analyse Produkte}
-# Kunden und dann Anzahl Bestellungen, durchschnittlicher Bestellwert und Umsatz
-
-pareto_analyse_produkt <- customer_summary %>% 
-  select(CustomerID, orders, avg_order_val,revenue) %>% 
-  arrange(desc(revenue)) %>% 
-  mutate(cum.revenue=cumsum(revenue)/sum(revenue)*100) %>% 
-  mutate(Kategorie=ifelse(cum.revenue<=20, "A", 
-                          ifelse(cum.revenue > 80, "C", "B")))
-
-  
-# Verteilung ABC
-library(ABCanalysis)
-
-ggplot(pareto_analyse_produkt, aes(x=Kategorie, y=orders)) +
-  geom_bar(stat = "identity") 
-
-  # sort.by.groups = TRUE
-  #geom_line(aes(x=Kategorie, y=cum.revenue))
+# ABC Analyse
 
 
 ```
 
-
-
-```{r}
-# Umsatz über gesamten Zeitraum 
-
-umsatz_zeitverlauf <- bereinigte_daten %>% 
-  group_by(date) %>% 
-  summarise(revenue= sum(Quantity*UnitPrice)) %>% 
-  mutate(date= date(date))
-  
-  library(scales)
-
-ggplot(umsatz_zeitverlauf, aes(date, revenue)) +
-  geom_area(fill="skyblue") + 
-  scale_x_date(breaks = date_breaks("months"), labels = date_format("%b")) +
-  labs(title = "Umsatzverlauf im Beobachtungszeitraum") +
-  xlab("Monat") +
-  ylab("Umsatz")
-```
 
 # Warenkorbanalyse (Apriori-Analyse)
 
