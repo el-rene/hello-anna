@@ -2,17 +2,21 @@
 title: "Transaktionsanalyse"
 author: "Anna & René"
 date: "1/8/2020"
-output: html_document
+output: 
+  prettydoc::html_pretty:
+    theme: architect
+    toc: true # toc_float ist leider nicht möglich mit dem prettydoc, alternativ html_document theme: spacelab
+
 ---
 # Daten Upload und Bereinigung (RL)
-```{r liabraries laden, include=TRUE, message=FALSE}
+```{r liabraries laden, include=FALSE, message=FALSE}
 # benötigte Libraries laden
-
 library(readxl)
 library(tidyverse)
 library(lubridate) 
 library(knitr)
 library(kableExtra)
+
 ```
 
 
@@ -24,7 +28,7 @@ raw_data <- read_excel("Online_Retail_Data.xlsx")
 ```
 
 
-```{r Manipulation der Rohdaten, include=TRUE, message=FALSE}
+```{r Manipulation der Rohdaten, include=FALSE, message=FALSE}
 # Manipulation der Daten
 
 weekend <- c("Sa", "So") # Sa. und So. als Value, um Weekend-Spalte im nächsten Schritt zu erzeugen
@@ -101,6 +105,21 @@ sum(customer_summary$revenue)
 gesamtumsatz_kunden=7285025
 
 ```
+Anzahl der Kunden: `r anzahl_kunden`
+
+Anzahl der Bestellungen: `r sum(customer_summary$orders)`
+
+Gesamtumsatz: `r sum(customer_summary$revenue)`
+
+# Kunden
+
+`r summary(customer_summary$revenue)`
+```{r, echo=FALSE, results='asis'}
+übersicht_revenue<- summary(customer_summary$revenue)
+
+kable(hhh)
+```
+
 
 Der Zeitraum der Analyse bezieht sich auf den `r min(bereinigte_daten$date)` bis `r max(bereinigte_daten$date)`. Im Datensatz sind **`r anzahl_kunden` Kunden** enhalten, die gesamt **`r gesamtbestellungen_kunden` Bestellungen** getätigt haben und dabei einen **Gesamtumsatz von `r gesamtumsatz_kunden`** erzeugt haben. Dabei wurden **durchschnittlich pro Kunde `r bestellungen_pro_kunde` Bestellungen** getätigt, allerdings zeigen die Daten, dass unter den Kunden mindestens einer ist, der 7676 Bestellungen getätigt hat. Damit dieser Ausreißer nicht so stark ins Gewicht fällt, betrachten wir zustäzlich den Median, dieser liegt bei `r bestellungen_pro_kunde_median`. Ausgelöst wurde dabei ein **durchschnittlicher Kundenumsatz von `r umsatz_pro_kunde_mean`**, der Median liegt hier bei `r umsatz_pro_kunde_median`. 
 
