@@ -117,7 +117,6 @@ Gesamtumsatz: `r sum(customer_summary$revenue)`
 ```{r, echo=FALSE, results='asis'}
 übersicht_revenue<- summary(customer_summary$revenue)
 
-kable(hhh)
 ```
 
 
